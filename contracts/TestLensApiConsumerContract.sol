@@ -23,10 +23,16 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
     uint public thresholdFollowers2 = 0;
     uint public thresholdFollowers3 = 0;
 
+    uint public dummycount = 0;
+
     address public USDCdAPIProxy;
     address public ETHdAPIProxy;
 
     mapping(uint => string) requests;
+    // Mapping from address to total amount earned
+    mapping(address => uint256) public totalEarned;
+    // Mapping from address to a bool array that indicates which thresholds have been claimed
+    mapping(address => bool[3]) public claimedThresholds;
     uint nextRequest = 1;
 
     constructor(address phatAttestor) {
@@ -70,8 +76,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
     }
 
     //Price Oracles
-    function setDapiProxy(address _usdc, address _eth) external onlyOwner {
-        USDCdAPIProxy = _usdc;
+    function setDapiProxy(address _eth) external onlyOwner {
         ETHdAPIProxy = _eth;
     }
 
@@ -101,66 +106,49 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         }
     }
 
-    function withdrawPayment(address _token, uint256 payment) public {
+    function withdrawPayment(address _token) public {
         //calcuate payouts and thresholds
-        try IERC20(_token).transferFrom(msg.sender, address(this), payment) {}
-        catch {
-            revert("withdraw failed");
+        totalEarned[msg.sender] = 0;
+        uint256 payout = paymentRequirements();
+        if(payout > 0) {
+            try IERC20(_token).transferFrom(msg.sender, address(this), payout) {}
+            catch {
+             revert("withdraw failed");
+            }
         }
+        
     }
     
     // Check the followers
-    function checkFollowers() public returns(uint) {
-        //if follows meet a certain threshold, set a boolean to true
+    function checkFollowers() public view returns(uint) {
+        //scan the api return
+        uint followerCount = dummycount;
+        return followerCount;
     }
 
     // put requirements
-    function putRequirements() public {
+    function paymentRequirements() public returns(uint256) {
         // put requirements for the profile
         uint followerCount = checkFollowers();
-        if (followerCount > thresholdFollowers3) {
-            // set the threshold
-        }else if (followerCount > thresholdFollowers2) {
-            // set the threshold
-        }else if (followerCount > thresholdFollowers1) {
-            // set the threshold
-        }else {
-            // set the threshold
-        }
-
-        //
-        // Mapping from address to a bool array that indicates which thresholds have been claimed
-        // mapping(address => bool[3]) public claimedThresholds;
-
-        // Mapping from address to total amount earned
-        mapping(address => uint256) public totalEarned;
-
-        // put requirements
-        function putRequirements() public {
-        // put requirements for the profile
-        uint followerCount = checkFollowers();
-        uint256 rewardAmount = 10e18;  // Let's say 10 dollars in the appropriate unit (wei, for example)
     
         if (followerCount > thresholdFollowers3 && !claimedThresholds[msg.sender][2]) {
         // If the threshold is met and hasn't been claimed yet
-        claimedThresholds[msg.sender][2] = true;
-        totalEarned[msg.sender] += rewardAmount;
+            claimedThresholds[msg.sender][2] = true;
+            totalEarned[msg.sender] += thresholdpayment3;
         } else if (followerCount > thresholdFollowers2 && !claimedThresholds[msg.sender][1]) {
-        claimedThresholds[msg.sender][1] = true;
-        totalEarned[msg.sender] += rewardAmount;
+            claimedThresholds[msg.sender][1] = true;
+            totalEarned[msg.sender] += thresholdpayment2;
         } else if (followerCount > thresholdFollowers1 && !claimedThresholds[msg.sender][0]) {
-        claimedThresholds[msg.sender][0] = true;
-        totalEarned[msg.sender] += rewardAmount;
+            claimedThresholds[msg.sender][0] = true;
+            totalEarned[msg.sender] += thresholdpayment1;
         }
-    
-     // At this point, totalEarned[msg.sender] contains the total amount earned by the user.
 
+        return totalEarned[msg.sender];
     }
 
     // calculate the value of eth
     function calculatePayout(uint256 _payment) public view returns(uint256) {
         uint256 ETHUSDCPrice = readDapi(ETHdAPIProxy);
-       // uint256 USDCUSDPrice = readDapi(USDCdAPIProxy);
         uint256 requiredPayout = (_payment / ETHUSDCPrice);
         return requiredPayout;
     }
