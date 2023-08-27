@@ -2,6 +2,13 @@ import { ethers } from "hardhat";
 import "dotenv/config";
 
 async function main() {
+
+  // const FakeWeth = await ethers.getContractFactory("WrappedETH");
+  // const fakeWeth = await FakeWeth.deploy();
+  // await fakeWeth.deployed();
+  // console.log("Weth deployed to:", fakeWeth.address);
+
+
   const TestLensApiConsumerContract = await ethers.getContractFactory("TestLensApiConsumerContract");
 
   const [deployer] = await ethers.getSigners();

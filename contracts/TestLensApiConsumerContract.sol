@@ -25,7 +25,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
 
     uint public dummycount = 0;
 
-    address public USDCdAPIProxy;
+    //address public USDCdAPIProxy;
     address public ETHdAPIProxy;
 
     mapping(uint => string) requests;
@@ -97,11 +97,15 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         thresholdFollowers2 = 2;
         thresholdFollowers3 = 3;
 
-        uint payment = (thresholdpayment1 + thresholdpayment2 + thresholdpayment3 + thresholdbonus);
+        uint payment = (thresholdpayment1 +
+            thresholdpayment2 +
+            thresholdpayment3 +
+            thresholdbonus);
 
         //Must approve token before depositing
-        try IERC20(_token).transferFrom(msg.sender, address(this), payment) {}
-        catch {
+        try
+            IERC20(_token).transferFrom(msg.sender, address(this), payment)
+        {} catch {
             revert("deposit failed");
         }
     }
@@ -110,35 +114,52 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         //calcuate payouts and thresholds
         totalEarned[msg.sender] = 0;
         uint256 payout = paymentRequirements();
-        if(payout > 0) {
-            try IERC20(_token).transferFrom(msg.sender, address(this), payout) {}
-            catch {
-             revert("withdraw failed");
+        if (payout > 0) {
+            try
+                IERC20(_token).transferFrom(msg.sender, address(this), payout)
+            {} catch {
+                revert("withdraw failed");
             }
         }
-        
     }
-    
+
+    function updateDummyCount(uint _count) public {
+        dummycount = _count;
+    }
+
     // Check the followers
-    function checkFollowers() public view returns(uint) {
-        //scan the api return
+    function checkFollowers() public view returns (uint) {
+        //scan the api return send the message request
         uint followerCount = dummycount;
         return followerCount;
     }
 
     // put requirements
-    function paymentRequirements() public returns(uint256) {
+    function paymentRequirements() public returns (uint256) {
         // put requirements for the profile
         uint followerCount = checkFollowers();
-    
-        if (followerCount > thresholdFollowers3 && !claimedThresholds[msg.sender][2]) {
-        // If the threshold is met and hasn't been claimed yet
+
+        if (
+            followerCount > thresholdFollowers3 &&
+            !claimedThresholds[msg.sender][2]
+        ) {
+            // If the threshold is met and hasn't been claimed yet
             claimedThresholds[msg.sender][2] = true;
             totalEarned[msg.sender] += thresholdpayment3;
-        } else if (followerCount > thresholdFollowers2 && !claimedThresholds[msg.sender][1]) {
+        }
+
+        if (
+            followerCount > thresholdFollowers2 &&
+            !claimedThresholds[msg.sender][1]
+        ) {
             claimedThresholds[msg.sender][1] = true;
             totalEarned[msg.sender] += thresholdpayment2;
-        } else if (followerCount > thresholdFollowers1 && !claimedThresholds[msg.sender][0]) {
+        }
+
+        if (
+            followerCount > thresholdFollowers1 &&
+            !claimedThresholds[msg.sender][0]
+        ) {
             claimedThresholds[msg.sender][0] = true;
             totalEarned[msg.sender] += thresholdpayment1;
         }
@@ -147,7 +168,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
     }
 
     // calculate the value of eth
-    function calculatePayout(uint256 _payment) public view returns(uint256) {
+    function calculatePayout(uint256 _payment) public view returns (uint256) {
         uint256 ETHUSDCPrice = readDapi(ETHdAPIProxy);
         uint256 requiredPayout = (_payment / ETHUSDCPrice);
         return requiredPayout;
