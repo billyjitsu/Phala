@@ -20,12 +20,11 @@ import type {
 // import EscrowContract from "../contract/escrow.json";
 
 const Intro = () => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = getAccount();
   const [loading, setLoading] = useState<boolean>(false);
   const [eventHappened, setEventHappened] = useState<boolean>(false);
   const [minted, setMinted] = useState<boolean>(false);
   const [fullHater, setHater] = useState<boolean>(false);
-  const provider = useProvider();
 
   const ESCROWCONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -34,55 +33,80 @@ const Intro = () => {
     abi: EscrowContract.abi,
   };
 
-  // const handleChange = (e: {
-  //   target: { value: React.SetStateAction<string> };
-  // }) => {
-  //   try {
-  //     setContractAddress(e.target.value);
-  //   } catch (error) {}
-
-  //   console.log(contractAddress);
-  // };
-
-  const listen = useContract({
-    address: ESCROWCONTRACT as any,
-    abi: EscrowContract.abi,
-    signerOrProvider: provider,
-  });
-
-  const getPastEvents = async () => {
-    const events = await (listen?.queryFilter(
-      "gameEnded",
-      35447840,
-      "latest"
-    ) ?? []);
-    console.log(events);
-    if (events.length > 0) {
-      console.log("The event has occurred");
-      setEventHappened(true);
-    } else {
-      console.log("The event has not occurred");
-    }
+  const deposityBounty = async () => {
+    // const parsedEth = ethers.utils.parseEther(amountEth.toString()) || 0;
+    // console.log(parsedEth.toString());
+    // if (addressIsConnected) {
+      try {
+        const { hash } = await writeContract({
+          ...contractConfig,
+         // chainId,
+          functionName: "depositPayment",
+          value: parsedEth,
+          account: connectedAddress,
+        });
+        setLoading(true);
+        const data = await waitForTransaction({
+          hash,
+        });
+        // await getUpdatedBalances();
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+      // }
   };
 
+  
+  const handleWithdrawEth = async (amountSta) => {
+    const parsedSta = ethers.utils.parseEther(amountSta.toString()) || "0";
+
+    const uintSta = ethers.BigNumber.from(parsedSta);
+    console.log(uintSta);
+    if (addressIsConnected) {
+      try {
+        setIsLoading(true);
+        const { hash: hashApproveSpend } = await writeContract({
+          address: contractAddress,
+          abi,
+          chainId,
+          functionName: "approve",
+          args: [contractAddress, uintSta],
+          account: connectedAddress,
+        });
+
+        const tx1 = await waitForTransaction({
+          hash: hashApproveSpend,
+        });
+
+        const { hash: hashReclaimEth } = await writeContract({
+          address: contractAddress,
+          abi,
+          chainId,
+          functionName: "reclaimEth",
+          args: [uintSta],
+          account: connectedAddress,
+        });
+
+        const tx2 = await waitForTransaction({
+          hash: hashReclaimEth,
+        });
+
+        await getUpdatedBalances();
+        setIsLoading(false);
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      alert("Connect wallet to update blockchain data");
+    }
+  };
+ 
+
   useEffect(() => {
-    getPastEvents();
+    // getPastEvents();
   }, []);
 
-  //Find the token URI of NFT ////////////////////////////
-  // const { data: nftMetaData } = useContractRead({
-  //   ...nftContractConfig,
-  //   functionName: "tokenURI",
-  //   args: [tokenId],
-  //   watch: true,
-  // } as unknown as UseContractReadConfig);
 
-  // const getImage = async () => {
-  //   const nftImage = await (await fetch(nftMetaData as string)).json();
-  //   setNFT(nftImage.image);
-  //  // console.log("NFT Image", nftImage.image);
-  // };
-  ///////////////////////////////////////////////////////
 
   return (
     <div className="bg-black h-screen w-full ">
@@ -132,20 +156,20 @@ const Intro = () => {
                     )}
 
                     <div className="flex flex-col max-w-s items-center text-center">
-                      {!loading && isConnected && !eventHappened && !minted && (
+                      {/* {!loading && isConnected && !eventHappened && !minted && (
                         <ChooseSideButton
                           contractConfig={contractConfig}
                           setLoading={setLoading}
                           setMinted={setMinted}
                           setHater={setHater}
                         />
-                      )}
-                      {isConnected && eventHappened && !minted && (
+                      )} */}
+                      {/* {isConnected && eventHappened && !minted && (
                         <ClaimPrizeButton
                           contractConfig={contractConfig}
                           setLoading={setLoading}
                         />
-                      )}
+                      )} */}
                       {!isConnected && (
                         <>
                           <ConnectButton />
