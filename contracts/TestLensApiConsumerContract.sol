@@ -24,6 +24,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
     uint public thresholdFollowers3 = 0;
 
     uint public dummycount = 0;
+    uint public followerCount = 0;
 
     //address public USDCdAPIProxy;
     address public ETHdAPIProxy;
@@ -43,7 +44,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         _grantRole(PhatRollupAnchor.ATTESTOR_ROLE, phatAttestor);
     }
 
-    function request(string calldata profileId) public {
+    function request(string memory profileId) public {
         // assemble the request
         uint id = nextRequest;
         requests[id] = profileId;
@@ -68,7 +69,9 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         if (respType == TYPE_RESPONSE) {
             emit ResponseReceived(id, requests[id], data);
             delete requests[id];
+            //test making sure my value is updating
             testValue = 1;
+            followerCount = data;
         } else if (respType == TYPE_ERROR) {
             emit ErrorReceived(id, requests[id], data);
             delete requests[id];
@@ -128,19 +131,23 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
     }
 
     // Check the followers
-    function checkFollowers() public view returns (uint) {
+    function checkFollowers() public returns (uint) {
+        //hardcoded profile
+        request("0x9007");
+        followerCount;
         //scan the api return send the message request
-        uint followerCount = dummycount;
-        return followerCount;
+        uint dummyCount = dummycount;
+        return dummyCount;
+        //return followerCount;
     }
 
     // put requirements
     function paymentRequirements() public returns (uint256) {
         // put requirements for the profile
-        uint followerCount = checkFollowers();
+        uint totalFollowerCount = checkFollowers();
 
         if (
-            followerCount > thresholdFollowers3 &&
+            totalFollowerCount > thresholdFollowers3 &&
             !claimedThresholds[msg.sender][2]
         ) {
             // If the threshold is met and hasn't been claimed yet
@@ -149,7 +156,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         }
 
         if (
-            followerCount > thresholdFollowers2 &&
+            totalFollowerCount > thresholdFollowers2 &&
             !claimedThresholds[msg.sender][1]
         ) {
             claimedThresholds[msg.sender][1] = true;
@@ -157,7 +164,7 @@ contract TestLensApiConsumerContract is PhatRollupAnchor, Ownable {
         }
 
         if (
-            followerCount > thresholdFollowers1 &&
+            totalFollowerCount > thresholdFollowers1 &&
             !claimedThresholds[msg.sender][0]
         ) {
             claimedThresholds[msg.sender][0] = true;

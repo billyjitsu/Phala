@@ -21,7 +21,7 @@ const Intro = () => {
   const [eventHappened, setEventHappened] = useState<boolean>(false);
   const [minted, setMinted] = useState<boolean>(false);
 
-  const JOBCONTRACT = "0x0e04079224cb3a42A33929DeC4618c2B275aFF2C";
+  const JOBCONTRACT = "0x8b5045b3f256eE98eDC46E0f611717F6B7ceFfdD";
   const WETHCONTRACT = "0x9292b8A52D33476dD26D46F0F21a91ae324F936A";
 
   const contractConfig = {
@@ -50,17 +50,18 @@ const Intro = () => {
   const depositBounty = async () => {
     try {
       setLoading(true);
+      console.log("approving")
       const { hash: hashApproveSpend } = await writeContract({
         address: WETHCONTRACT,
         abi: WethContract.abi,
         functionName: "approve",
         args: [JOBCONTRACT, 50000000000000000000],
       } as unknown as any);
-
+      console.log('waiting for transaction')
       const tx1 = await waitForTransaction({
         hash: hashApproveSpend,
       });
-
+      console.log('depositin')
       const { hash: hashReclaimEth } = await writeContract({
         ...contractConfig,
         //chainId,
